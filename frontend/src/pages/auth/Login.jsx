@@ -1,18 +1,39 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
   const [loading, setLoading] = useState(false);
-  const [userType, setUserType] = useState('student');
-  const { login } = useAuth();
+  const { login, error } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle redirect if user is already logged in
+  useEffect(() => {
+    if (location.state?.message) {
+      toast.success(location.state.message);
+      // Clear the message so it doesn't show again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
+  const { email, password } = formData;
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
@@ -20,12 +41,16 @@ function Login() {
 
     try {
       setLoading(true);
-      await login(email, password, userType);
-      toast.success('Logged in successfully');
-      navigate(`/${userType}/dashboard`);
+      const { success, message } = await login(email, password);
+      
+      if (success) {
+        toast.success(message || 'Logged in successfully');
+      } else {
+        toast.error(message || 'Failed to log in');
+      }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error.message || 'Failed to log in');
+      toast.error('An error occurred during login');
     } finally {
       setLoading(false);
     }
@@ -66,7 +91,7 @@ function Login() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700"
                 placeholder="Email address"
               />
@@ -82,7 +107,7 @@ function Login() {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-700"
                 placeholder="Password"
               />
@@ -113,10 +138,37 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </>
+              ) : 'Sign in'}
             </button>
+          </div>
+
+          {error && (
+            <div className="text-sm text-red-600 dark:text-red-400 text-center">
+              {error}
+            </div>
+          )}
+
+          <div className="text-sm text-center">
+            <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200">
+              Forgot your password?
+            </Link>
+          </div>
+
+          <div className="text-sm text-center">
+            <span className="text-gray-600 dark:text-gray-300">Don't have an account? </span>
+            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200">
+              Sign up
+            </Link>
           </div>
         </form>
       </div>

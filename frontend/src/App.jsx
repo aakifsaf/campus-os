@@ -1,86 +1,110 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { lazy, Suspense } from 'react';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import LoadingSpinner from './components/common/LoadingSpinner';
 
 // Lazy load route components
 const Login = lazy(() => import('./pages/auth/Login'));
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
+
+// Dashboard pages
 const StudentDashboard = lazy(() => import('./pages/student/Dashboard'));
 const FacultyDashboard = lazy(() => import('./pages/faculty/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
 
+// Student pages
+const StudentProfile = lazy(() => import('./pages/student/Profile'));
+const StudentCourses = lazy(() => import('./pages/student/Courses'));
+
+// Faculty pages
+const FacultyProfile = lazy(() => import('./pages/faculty/Profile'));
+const FacultyCourses = lazy(() => import('./pages/faculty/Courses'));
+
+// Admin pages
+const Users = lazy(() => import('./pages/admin/Users'));
+const Courses = lazy(() => import('./pages/admin/Courses'));
+const Enrollments = lazy(() => import('./pages/admin/Enrollments'));
+
+// Common pages
+const PageNotFound = lazy(() => import('./pages/common/PageNotFound'));
+const Unauthorized = lazy(() => import('./pages/common/Unauthorized'));
+
 // Loading component
-const Loading = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-  </div>
-);
-
-// Protected Route component
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, role, loading } = useAuth();
-
-  if (loading) return <Loading />;
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(role)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
+const Loading = () => <LoadingSpinner fullScreen />;
 
 function AppContent() {
-  const { user, role } = useAuth();
-
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={!user ? <Login /> : <Navigate to={`/${role}`} />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
         
-        {/* Protected Routes */}
+        {/* Student Routes */}
         <Route
           path="/student/*"
           element={
-            // <ProtectedRoute allowedRoles={['student']}>
-              <StudentDashboard />
-            // </ProtectedRoute>
+            <ProtectedRoute roles={['student']}>
+              <Layout role="student" />
+            </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<StudentDashboard />} />
+          <Route path="profile" element={<StudentProfile />} />
+          <Route path="courses" element={<StudentCourses />} />
+          <Route path="*" element={<PageNotFound />} />
+        </Route>
+        
+        {/* Faculty Routes */}
         <Route
           path="/faculty/*"
           element={
-            // <ProtectedRoute allowedRoles={['faculty']}>
-              <FacultyDashboard />
-            // </ProtectedRoute>
+            <ProtectedRoute roles={['faculty']}>
+              <Layout role="faculty" />
+            </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<FacultyDashboard />} />
+          <Route path="profile" element={<FacultyProfile />} />
+          <Route path="courses" element={<FacultyCourses />} />
+          <Route path="*" element={<PageNotFound />} />
+        </Route>
+        
+        {/* Admin Routes */}
         <Route
           path="/admin/*"
           element={
-            // <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
-            // </ProtectedRoute>
+            <ProtectedRoute roles={['admin']}>
+              <Layout role="admin" />
+            </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<Users />} />
+          <Route path="courses" element={<Courses />} />
+          <Route path="enrollments" element={<Enrollments />} />
+          <Route path="*" element={<PageNotFound />} />
+        </Route>
         
         {/* Redirect root to appropriate dashboard or login */}
-        <Route
-          path="/"
+        <Route 
+          path="/" 
           element={
-            user ? (
-              <Navigate to={`/${role}`} replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
+            <ProtectedRoute>
+              <Navigate to="/dashboard" replace />
+            </ProtectedRoute>
+          } 
         />
+        
+        {/* 404 Route */}
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Suspense>
   );
