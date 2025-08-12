@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useNavigate, useLocation } from 'react-router-dom';
 import api, { setAuthToken, clearAuthToken } from '../config/api';
 import { toast } from 'react-hot-toast';
+import { authService } from '../services';
 
 export const AuthContext = createContext();
 
@@ -19,9 +20,10 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('token');
         if (token) {
           setAuthToken(token);
-          const { success, data, message } = await api.getCurrentUser();
+          const { success, user } = await authService.getCurrentUser();
+          console.log("user",user);
           if (success) {
-            setUser(data);
+            setUser(user);
           } else {
             // If token is invalid, clear it
             clearAuthToken();
@@ -47,38 +49,34 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login user
-  const login = async (email, password) => {
+const login = async ({ email, password, remember = false }) => {
     try {
       setError(null);
       setLoading(true);
-      const { success, data, message } = await api.login({ email, password });
+      const response = await authService.login({ email, password, remember });
+      console.log("authcontext response",response);
       
-      if (success && data) {
-        setUser(data.user);
-        localStorage.setItem('token', data.token);
-        setAuthToken(data.token);
+      if (response.success && response.data) {
+        setUser(response.data.user);
         
-        // Store user role in localStorage for quick access
-        localStorage.setItem('userRole', data.user.role);
+        // Store the token from the response
+        setAuthToken(response.data.token);
         
-        // Redirect to intended page or dashboard
-        const from = location.state?.from?.pathname || `/${data.user.role}/dashboard`;
-        navigate(from, { replace: true });
-        
-        toast.success('Logged in successfully');
-        return { success: true, message: 'Logged in successfully' };
+        // Return the user role for redirection
+        return {
+          success: true,
+          role: response.data.user.role // Make sure your API returns the user role
+        };
       } else {
-        const errorMsg = message || 'Invalid email or password';
-        setError(errorMsg);
-        toast.error(errorMsg);
-        return { success: false, message: errorMsg };
+        setError(response.message || 'Login failed');
+        toast.error(response.message || 'Login failed');
+        return { success: false };
       }
     } catch (error) {
       console.error('Login error:', error);
-      const errorMsg = error.response?.data?.message || 'An error occurred during login';
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return { success: false, message: errorMsg };
+      setError(error.message || 'An error occurred during login');
+      toast.error(error.message || 'An error occurred during login');
+      return { success: false };
     } finally {
       setLoading(false);
     }

@@ -15,20 +15,20 @@ const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 // Dashboard pages
 const StudentDashboard = lazy(() => import('./pages/student/Dashboard'));
 const FacultyDashboard = lazy(() => import('./pages/faculty/Dashboard'));
-const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard.jsx'));
 
-// Student pages
-const StudentProfile = lazy(() => import('./pages/student/Profile'));
-const StudentCourses = lazy(() => import('./pages/student/Courses'));
+// // Student pages
+// const StudentProfile = lazy(() => import('./pages/student/Profile'));
+// const StudentCourses = lazy(() => import('./pages/student/Courses'));
 
-// Faculty pages
-const FacultyProfile = lazy(() => import('./pages/faculty/Profile'));
-const FacultyCourses = lazy(() => import('./pages/faculty/Courses'));
+// // Faculty pages
+// const FacultyProfile = lazy(() => import('./pages/faculty/Profile'));
+// const FacultyCourses = lazy(() => import('./pages/faculty/Courses'));
 
-// Admin pages
-const Users = lazy(() => import('./pages/admin/Users'));
-const Courses = lazy(() => import('./pages/admin/Courses'));
-const Enrollments = lazy(() => import('./pages/admin/Enrollments'));
+// // Admin pages
+// const Users = lazy(() => import('./pages/admin/Users'));
+// const Courses = lazy(() => import('./pages/admin/Courses'));
+// const Enrollments = lazy(() => import('./pages/admin/Enrollments'));
 
 // Common pages
 const PageNotFound = lazy(() => import('./pages/common/PageNotFound'));
@@ -57,8 +57,8 @@ function AppContent() {
           }
         >
           <Route index element={<StudentDashboard />} />
-          <Route path="profile" element={<StudentProfile />} />
-          <Route path="courses" element={<StudentCourses />} />
+          {/* <Route path="profile" element={<StudentProfile />} />
+          <Route path="courses" element={<StudentCourses />} /> */}
           <Route path="*" element={<PageNotFound />} />
         </Route>
         
@@ -72,8 +72,8 @@ function AppContent() {
           }
         >
           <Route index element={<FacultyDashboard />} />
-          <Route path="profile" element={<FacultyProfile />} />
-          <Route path="courses" element={<FacultyCourses />} />
+          {/* <Route path="profile" element={<FacultyProfile />} />
+          <Route path="courses" element={<FacultyCourses />} /> */}
           <Route path="*" element={<PageNotFound />} />
         </Route>
         
@@ -82,14 +82,13 @@ function AppContent() {
           path="/admin/*"
           element={
             <ProtectedRoute roles={['admin']}>
-              <Layout role="admin" />
             </ProtectedRoute>
           }
         >
           <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<Users />} />
+          {/* <Route path="users" element={<Users />} />
           <Route path="courses" element={<Courses />} />
-          <Route path="enrollments" element={<Enrollments />} />
+          <Route path="enrollments" element={<Enrollments />} /> */}
           <Route path="*" element={<PageNotFound />} />
         </Route>
         

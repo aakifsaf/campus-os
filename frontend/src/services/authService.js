@@ -6,30 +6,54 @@ import { handleApiError } from '../utils/errorHandler';
  * Handles all authentication related API calls
  */
 const authService = {
-  /**
-   * Login user with email and password
-   * @param {string} email - User's email
-   * @param {string} password - User's password
-   * @returns {Promise<Object>} User data and token
-   */
-  login: async (email, password) => {
-    try {
-      const { data } = await api.post(API_ENDPOINTS.AUTH.LOGIN, { email, password });
-      
-      // Set auth token and user data
-      setAuthToken(data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      return {
-        success: true,
-        user: data.user,
-        token: data.token,
-        message: 'Login successful'
-      };
-    } catch (error) {
-      return handleApiError(error);
-    }
-  },
+    /**
+     * Login user with email and password
+     * @param {Object} credentials - User credentials
+     * @param {string} credentials.email - User's email
+     * @param {string} credentials.password - User's password
+     * @param {boolean} credentials.remember - Whether to remember the user
+     * @returns {Promise<Object>} Response with user data and token
+     */
+    login: async ({ email, password, remember = false }) => {
+      try {
+        const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, { 
+          email, 
+          password 
+        }, {
+          // Ensure we don't add auth token for login request
+          skipAuth: true
+        });
+        console.log(response);
+  
+        if (response?.token) {
+          // Set auth token
+          setAuthToken(response.token);
+          
+          // Store user data
+          localStorage.setItem('user', JSON.stringify(response.user));
+          
+          // Store remember preference
+          if (remember) {
+            localStorage.setItem('rememberMe', 'true');
+          } else {
+            sessionStorage.setItem('sessionActive', 'true');
+          }
+  
+          return {
+            success: true,
+            data: response,
+            message: 'Login successful'
+          };
+        }
+  
+        return {
+          success: false,
+          message: 'Invalid response from server'
+        };
+      } catch (error) {
+        return handleApiError(error);
+      }
+    },
 
   /**
    * Register a new user
@@ -56,9 +80,10 @@ const authService = {
   getCurrentUser: async () => {
     try {
       const { data } = await api.get(API_ENDPOINTS.AUTH.ME);
+      console.log("data",data);
       return {
         success: true,
-        user: data.user
+        user: data
       };
     } catch (error) {
       return handleApiError(error);

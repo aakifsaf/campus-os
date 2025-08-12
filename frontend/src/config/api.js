@@ -9,7 +9,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 const DEFAULT_ERROR_MESSAGE = 'An error occurred. Please try again later.';
 
 // API Endpoints
-export const API_ENDPOINTS = {
+const API_ENDPOINTS = {
   // Auth
   AUTH: {
     LOGIN: '/auth/login',
@@ -98,7 +98,7 @@ api.interceptors.request.use(
     ];
 
     // Skip auth for these endpoints
-    if (!skipAuthEndpoints.some(endpoint => config.url.includes(endpoint))) {
+    if (!config.skipAuth && !skipAuthEndpoints.some(endpoint => config.url.includes(endpoint))) {
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -127,66 +127,41 @@ api.interceptors.request.use(
 
 // Response interceptor to handle common errors
 api.interceptors.response.use(
-  (response) => {
-    // Hide loading indicator if it was shown
-    if (response.config.showLoading !== false) {
-      // Hide loading indicator
-    }
-    
-    // Process successful responses
-    return response.data; // Return only the data part of the response
-  },
-  (error) => {
-    const { response } = error;
-    
-    // Handle different error statuses
-    if (response) {
-      switch (response.status) {
-        case 401:
-          // Handle unauthorized access
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          // Redirect to login page if not already there
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-          break;
-        case 403:
-          // Handle forbidden access
-          console.error('Access Denied: You do not have permission to access this resource');
-          break;
-        case 404:
-          // Handle not found errors
-          console.error('The requested resource was not found');
-          break;
-        case 500:
-          // Handle server errors
-          console.error('A server error occurred');
-          break;
-        default:
-          console.error('An error occurred');
+    (response) => {
+      // Safely handle response with optional chaining
+      if (response?.config?.showLoading !== false) {
+        // Hide loading indicator if needed
       }
       
-      // Return a normalized error object
-      return Promise.reject({
-        status: response.status,
-        message: response.data?.message || 'An error occurred',
-        errors: response.data?.errors,
-        data: response.data,
-      });
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response from server. Please check your connection.');
-      return Promise.reject({
-        message: 'No response from server. Please check your connection.',
-        isNetworkError: true,
-      });
+      // Return the response data if it exists
+      return response?.data || response;
+    },
+    (error) => {
+      // Handle error responses
+      const { response } = error || {};
+      
+      // Handle network errors
+      if (!response) {
+        return Promise.reject({
+          message: 'Network error. Please check your connection.',
+          status: 0
+        });
+      }
+  
+      // Handle specific status codes
+      if (response.status === 401) {
+        // Clear auth data on 401 Unauthorized
+        clearAuthToken();
+        // Redirect to login if not already there
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+  
+      // Pass the error to the next handler
+      return Promise.reject(handleApiError(error));
     }
-    
-    // Something happened in setting up the request that triggered an Error
-    return Promise.reject(error);
-  }
-);
+  );
 
 
 // Helper function to set base URL
@@ -228,99 +203,6 @@ const handleApiError = (error) => {
   }
 };
 
-// Response interceptor to handle common errors
-api.interceptors.response.use(
-  (response) => {
-    // Hide loading indicator if it was shown
-    if (response.config.showLoading !== false) {
-      // Hide loading indicator
-    }
-    
-    // Process successful responses
-    return response.data; // Return only the data part of the response
-  },
-  (error) => {
-    // Hide loading indicator if it was shown
-    if (error.config?.showLoading !== false) {
-      // Hide loading indicator
-    }
-    
-    // Handle error responses
-    if (error.response) {
-      const { status, data } = error.response;
-      const errorMessage = data?.message || DEFAULT_ERROR_MESSAGE;
-      
-      // Handle specific status codes
-      switch (status) {
-        case 401: // Unauthorized
-          // Clear auth data
-          localStorage.removeItem('token');
-          localStorage.removeItem('userRole');
-          
-          // Only redirect if not on login or register page
-          if (!window.location.pathname.includes('/login') && 
-              !window.location.pathname.includes('/register')) {
-            toast.error('Your session has expired. Please log in again.');
-            window.location.href = '/login';
-          }
-          break;
-          
-        case 403: // Forbidden
-          toast.error('You do not have permission to access this resource.');
-          window.location.href = '/unauthorized';
-          break;
-          
-        case 404: // Not Found
-          toast.error('The requested resource was not found.');
-          break;
-          
-        case 422: // Validation Error
-          // Handle validation errors (show first error message)
-          const firstError = data?.errors?.[0]?.msg;
-          if (firstError) {
-            toast.error(firstError);
-          } else {
-            toast.error(errorMessage);
-          }
-          break;
-          
-        case 429: // Too Many Requests
-          toast.error('Too many requests. Please try again later.');
-          break;
-          
-        case 500: // Internal Server Error
-          toast.error('A server error occurred. Please try again later.');
-          break;
-          
-        default:
-          toast.error(errorMessage);
-      }
-      
-      return Promise.reject({
-        status,
-        message: errorMessage,
-        errors: data?.errors || null,
-        data: data?.data || null,
-      });
-      
-    } else if (error.request) {
-      // The request was made but no response was received
-      toast.error('Unable to connect to the server. Please check your internet connection.');
-      return Promise.reject({
-        status: 0,
-        message: 'No response from server. Please check your internet connection.',
-      });
-      
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Request setup error:', error.message);
-      return Promise.reject({
-        status: -1,
-        message: 'An error occurred while setting up the request',
-      });
-    }
-  }
-);
 
 // Helper function to set auth token
 const setAuthToken = (token) => {
@@ -333,13 +215,19 @@ const setAuthToken = (token) => {
   }
 };
 
+const clearAuthToken = () => {
+  delete api.defaults.headers.common['Authorization'];
+  localStorage.removeItem('token');
+};
+
 // Export the configured axios instance and helper functions
 export { 
   api, 
   setAuthToken, 
   setBaseUrl, 
   handleApiError,
-  API_ENDPOINTS 
+  API_ENDPOINTS,
+  clearAuthToken 
 };
 
 export default api;
