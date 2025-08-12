@@ -1,5 +1,5 @@
 import express from 'express';
-const router = express.Router();
+const uploadRouter = express.Router();
 import { protect, authorize } from '../middleware/auth.js';
 import { fileUpload, fileSizeFormatter } from '../middleware/upload.js';
 import path from 'path';
@@ -72,7 +72,7 @@ export const deleteFile = asyncHandler(async (req, res, next) => {
 const upload = fileUpload.single('file');
 
 // Route for general file uploads
-router.post('/', protect, (req, res, next) => {
+uploadRouter.post('/', protect, (req, res, next) => {
   upload(req, res, function (err) {
     if (err) {
       return next(new ErrorResponse(`Error uploading file: ${err.message}`, 400));
@@ -82,6 +82,6 @@ router.post('/', protect, (req, res, next) => {
 }, uploadFile);
 
 // Route for deleting files
-router.delete('/:filename', protect, deleteFile);
+uploadRouter.delete('/:filename', protect, deleteFile);
 
-export default router;
+export default uploadRouter;

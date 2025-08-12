@@ -1,5 +1,5 @@
 import express from 'express';
-const router = express.Router();
+const studentRouter = express.Router();
 import {
   getStudents,
   getStudent,
@@ -16,20 +16,20 @@ import { fileUpload } from '../middleware/upload.js';
 import enrollmentRouter from './enrollment.routes.js';
 
 // Re-route into other resource routers
-router.use('/:studentId/enrollments', enrollmentRouter);
+studentRouter.use('/:studentId/enrollments', enrollmentRouter);
 
-router
+studentRouter
   .route('/')
   .get(protect, getStudents)
   .post(protect, authorize('admin', 'faculty'), createStudent);
 
-router
+studentRouter
   .route('/:id')
   .get(protect, getStudent)
   .put(protect, authorize('admin', 'faculty'), updateStudent)
   .delete(protect, authorize('admin'), deleteStudent);
 
-router
+studentRouter
   .route('/:id/photo')
   .put(
     protect,
@@ -39,6 +39,6 @@ router
   );
 
 // Get logged in student profile
-router.get('/me/profile', protect, getStudentProfile);
+studentRouter.get('/me/profile', protect, getStudentProfile);
 
-export default router;
+export default studentRouter;

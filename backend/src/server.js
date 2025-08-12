@@ -19,11 +19,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import routes
-import authRoutes from './routes/auth.routes.js';
-import studentRoutes from './routes/student.routes.js';
-import facultyRoutes from './routes/faculty.routes.js';
-import courseRoutes from './routes/course.routes.js';
-import uploadRoutes from './routes/upload.routes.js';
+import authRouter from './routes/auth.routes.js';
+import studentRouter from './routes/student.routes.js';
+import facultyRouter from './routes/faculty.routes.js';
+import courseRouter from './routes/course.routes.js';
+import uploadRouter from './routes/upload.routes.js';
 
 // Initialize express app
 const app = express();
@@ -88,11 +88,11 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Mount routers
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/students', studentRoutes);
-app.use('/api/v1/faculty', facultyRoutes);
-app.use('/api/v1/courses', courseRoutes);
-app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/students', studentRouter);
+app.use('/api/v1/faculty', facultyRouter);
+app.use('/api/v1/courses', courseRouter);
+app.use('/api/v1/upload', uploadRouter);
 
 // Error handler middleware
 app.use(errorHandler);
@@ -111,7 +111,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     server.listen(PORT, () => {
-      console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+      console.log(`Server running in ${process.env.NODE_ENV} mode on http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('Error starting server:', error);

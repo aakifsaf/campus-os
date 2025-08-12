@@ -1,15 +1,15 @@
 import express from 'express';
-const router = express.Router();
+const authRouter = express.Router();
 import { register, login, getMe, logout, updateDetails, updatePassword, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
 import { protect } from '../middleware/auth.js';
 
-router.post('/register', register);
-router.post('/login', login);
-router.get('/me', protect, getMe);
-router.get('/logout', logout);
-router.put('/updatedetails', protect, updateDetails);
-router.put('/updatepassword', protect, updatePassword);
-router.post('/forgotpassword', forgotPassword);
-router.put('/resetpassword/:resettoken', resetPassword);
+authRouter.post('/register', register);
+authRouter.post('/login', login);
+authRouter.get('/me', protect, getMe);
+authRouter.get('/logout', logout);
+authRouter.put('/updatedetails', protect, updateDetails);
+authRouter.put('/updatepassword', protect, updatePassword);
+authRouter.post('/forgotpassword', forgotPassword);
+authRouter.put('/resetpassword/:resettoken', resetPassword);
 
-export default router;
+export default authRouter;

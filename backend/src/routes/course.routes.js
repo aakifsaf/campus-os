@@ -1,5 +1,5 @@
 import express from 'express';
-const router = express.Router();
+const courseRouter = express.Router();
 import {
   getCourses,
   getCourse,
@@ -17,9 +17,9 @@ import Course from '../models/Course.js';
 import enrollmentRouter from './enrollment.routes.js';
 
 // Re-route into other resource routers
-router.use('/:courseId/enrollments', enrollmentRouter);
+courseRouter.use('/:courseId/enrollments', enrollmentRouter);
 
-router
+courseRouter
   .route('/')
   .get(
     advancedResults(Course, {
@@ -30,13 +30,13 @@ router
   )
   .post(protect, authorize('admin', 'faculty'), createCourse);
 
-router
+courseRouter
   .route('/:id')
   .get(getCourse)
   .put(protect, authorize('admin', 'faculty'), updateCourse)
   .delete(protect, authorize('admin', 'faculty'), deleteCourse);
 
-router
+courseRouter
   .route('/:id/photo')
   .put(
     protect,
@@ -45,4 +45,4 @@ router
     uploadCourseImage
   );
 
-export default router;
+export default courseRouter;
